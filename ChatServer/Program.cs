@@ -5,6 +5,7 @@ using ChatServer.Requests;
 using ChatServer.Services;
 using ChatServer.Services.Abstraction;
 using Contracts;
+using Contracts.Responses;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,7 +25,7 @@ builder.Services.AddDbContext<ServerDbContext>(opt => {
 });
 
 
-builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 
 var app = builder.Build();
 
@@ -57,12 +58,26 @@ app.MapGet("/weatherforecast", () =>
 })
 .WithName("GetWeatherForecast");
 
-app.MapPost("/send-message", async ([FromServices] IMessageService service, [FromBody] SendMessageRequest request) =>
+app.MapGet("/getmessages/{number:int}", async ([FromServices] IMessageRepository repository, [FromRoute] int number) =>
 {
-    await Task.Delay(100);
+    var messages = await repository.GetMessagesAsync(number);
 
-    await service.SendMessageAsync(request);
+    var messagesResponse = new MessagesResponse();
+
+    foreach(var message in messages)
+    {
+        var messageresponse = new Message
+        {
+            From = message.From,
+            SendTime = message.SendTime,
+            Text = message.Text
+        };
+
+        messagesResponse.Messages.Add(messageresponse);
+    }
+
+    return messagesResponse;
 })
-.WithName("SendMessage");
+.WithName("GetMessages");
 
 app.Run();

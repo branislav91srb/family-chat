@@ -67,4 +67,10 @@
       <ProjectReference Include="..\Contracts\Contracts.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Update="wwwroot\js\notifications.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
 </Project>

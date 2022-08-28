@@ -1,123 +1,61 @@
 ﻿@page "/chat"
+@using Contracts
+@using Contracts.Responses
 @using LocalChatApp.Data.Enitites
+@using LocalChatApp.Models
 @using LocalChatApp.Services.Abstraction
 @using Microsoft.AspNetCore.SignalR.Client
+@using System.Net.Http.Json
 
-@inject IAppSettingsService AppSettingsService
+@inject IHttpClientFactory ClientFactory
+@inject IServerUriService ServerUriService
 
 <h3>Chat</h3>
 <h4>Hello, @DeviceInfo.Name!</h4>
 
 <br />
 
-<ul>
-    @foreach (var message in Model.Messages)
+<div class="row bootstrap">
+    @if (ChatModel is null)
     {
-        <li>@message</li>
+        <div class="d-flex align-items-center">
+            <strong>Loading...</strong>
+            <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div>
+        </div>
+
     }
-</ul>
+    else
+    {
+        <Messages Model="ChatModel" />
+    }
+</div>
 
 <br />
 
-<EditForm Model="Model" OnValidSubmit="SendMessage" autocomplete="off">
-    <InputText id="host" @bind-Value="Model.Message" autocomplete="off" />
-
-
-    <button type="submit" class="btn btn-primary" disabled=@IsDisabled>Send</button>
-
-</EditForm>
+<MessageNotificationSound />
 
 @code {
-    private ChatModel Model = new();
-    protected bool IsDisabled { get; set; } = true;
+    private ChatModel ChatModel;
 
-    private HubConnection Connection;
 
     protected override async Task OnInitializedAsync()
     {
-        var settings = await AppSettingsService.GetAllAsync();
-        var chatUrl = GetChatServerUrl(settings);
+        var serverUri = await ServerUriService.GetServerUriAsync();
 
-        Connection = new HubConnectionBuilder()
-            .WithUrl(chatUrl)
-            .Build();
+        const int numberOfMessages = 10;
 
-        Connection.On<string, string>("ReceiveMessage", ReceiveMessage);
+        var client = ClientFactory.CreateClient();
+        client.BaseAddress = new Uri(serverUri);
 
-        await Connection.StartAsync();
-    }
+        var response = await client.GetFromJsonAsync<MessagesResponse>($"/getmessages/{numberOfMessages}");
 
-
-    private async Task SendMessage()
-    {
-        if (string.IsNullOrWhiteSpace(Model.Message))
+        ChatModel = new ChatModel
         {
-            return;
-        }
+            Message = string.Empty,
+            Messages = response.Messages
+        };
 
-        IsDisabled = true;
-
-        await Connection.SendAsync("SendMessage", DeviceInfo.Name, Model.Message);
-
-        Model.Message = string.Empty;
-
-        IsDisabled = false;
+        await base.OnInitializedAsync();
     }
 
-    public void ReceiveMessage(string user, string message)
-    {
-        if (string.IsNullOrWhiteSpace(message))
-        {
-            return;
-        }
-
-        Model.Messages.Add($"{user}: {message}");
-        StateHasChanged();
-    }
-
-    private string GetChatServerUrl(List<AppSettingsItem> settingsItems)
-    {
-        var hub = "chatHub";
-        var host = settingsItems.Single(x => x.Id == AppSettingsItemKeyEnum.AppServerHost).Value;
-        var port = settingsItems.Single(x => x.Id == AppSettingsItemKeyEnum.AppServerPort).Value;
-
-        return $"{host}:{port}/{hub}";
-    }
-
-    private void MessageChanged(string value)
-    {
-        var messageValue = Model.Message.Trim();
-
-        Model.Message = messageValue;
-
-        if (messageValue.Count() > 0)
-        {
-            IsDisabled = false;
-        }
-        else
-        {
-            IsDisabled = true;
-        }
-
-        StateHasChanged();
-    }
-
-    private class ChatModel
-    {
-        private string message;
-        public string Message
-        {
-            get
-            {
-                return message;
-            }
-            set
-            {
-                MessageChanged(value);
-                message = value;
-            }
-        }
-
-        public List<string> Messages { get; set; } = new();
-    }
 }

@@ -11,7 +11,7 @@ namespace ChatServer.Data.Entities
 
         public string To { get; set; }
 
-        public DateTime SendTime { get; set; }
+        public DateTime SendTime { get; set; } = DateTime.Now;
 
         public string Text { get; set; }
     }
