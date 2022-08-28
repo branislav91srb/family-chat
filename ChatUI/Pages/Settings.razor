@@ -1,0 +1,47 @@
+﻿@page "/settings"
+@using LocalChatApp.Data.Enitites
+@using LocalChatApp.Models
+@using LocalChatApp.Services.Abstraction
+
+@inject IAppSettingsService AppSettingsService
+@inject NavigationManager NavManager
+@*@inject ILogger<Settings> Logger*@
+
+<h3>Settings</h3>
+
+<EditForm Model="appSettings" OnValidSubmit="SaveSettings">
+    <InputText id="host" @bind-Value="appSettings.AppServerHost" />
+
+    <InputText id="port" @bind-Value="appSettings.AppServerPort" />
+
+    <button type="submit">Submit</button>
+</EditForm>
+
+@code {
+    private AppSettingsModel appSettings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var settings = await AppSettingsService.GetAllAsync();
+
+        appSettings.AppServerHost = settings.SingleOrDefault(x => x.Id == AppSettingsItemKeyEnum.AppServerHost)?.Value;
+        appSettings.AppServerPort = settings.SingleOrDefault(x => x.Id == AppSettingsItemKeyEnum.AppServerPort)?.Value;
+
+        //return base.OnInitializedAsync();
+    }
+
+    private async Task SaveSettings()
+    {
+        var allSettings = new List<AppSettingsItem>{
+            new AppSettingsItem {Id = AppSettingsItemKeyEnum.AppServerHost, Value = appSettings.AppServerHost},
+            new AppSettingsItem {Id = AppSettingsItemKeyEnum.AppServerPort, Value = appSettings.AppServerPort}
+        };
+
+        foreach (var item in allSettings)
+        {
+            await AppSettingsService.SaveAsync(item);
+        }
+
+        NavManager.NavigateTo("/");
+    }
+}

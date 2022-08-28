@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+    server:
+        container_name: local-chat-server
+        build:
+            context: .
+            dockerfile: ./ChatServer/Dockerfile
+
+        ports:
+            - 9001:80
+        environment:
+            - ASPNETCORE_ENVIRONMENT=Docker

@@ -1,0 +1,123 @@
+﻿@page "/chat"
+@using LocalChatApp.Data.Enitites
+@using LocalChatApp.Services.Abstraction
+@using Microsoft.AspNetCore.SignalR.Client
+
+@inject IAppSettingsService AppSettingsService
+
+<h3>Chat</h3>
+<h4>Hello, @DeviceInfo.Name!</h4>
+
+<br />
+
+<ul>
+    @foreach (var message in Model.Messages)
+    {
+        <li>@message</li>
+    }
+</ul>
+
+<br />
+
+<EditForm Model="Model" OnValidSubmit="SendMessage" autocomplete="off">
+    <InputText id="host" @bind-Value="Model.Message" autocomplete="off" />
+
+
+    <button type="submit" class="btn btn-primary" disabled=@IsDisabled>Send</button>
+
+</EditForm>
+
+@code {
+    private ChatModel Model = new();
+    protected bool IsDisabled { get; set; } = true;
+
+    private HubConnection Connection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var settings = await AppSettingsService.GetAllAsync();
+        var chatUrl = GetChatServerUrl(settings);
+
+        Connection = new HubConnectionBuilder()
+            .WithUrl(chatUrl)
+            .Build();
+
+        Connection.On<string, string>("ReceiveMessage", ReceiveMessage);
+
+        await Connection.StartAsync();
+    }
+
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(Model.Message))
+        {
+            return;
+        }
+
+        IsDisabled = true;
+
+        await Connection.SendAsync("SendMessage", DeviceInfo.Name, Model.Message);
+
+        Model.Message = string.Empty;
+
+        IsDisabled = false;
+    }
+
+    public void ReceiveMessage(string user, string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return;
+        }
+
+        Model.Messages.Add($"{user}: {message}");
+        StateHasChanged();
+    }
+
+    private string GetChatServerUrl(List<AppSettingsItem> settingsItems)
+    {
+        var hub = "chatHub";
+        var host = settingsItems.Single(x => x.Id == AppSettingsItemKeyEnum.AppServerHost).Value;
+        var port = settingsItems.Single(x => x.Id == AppSettingsItemKeyEnum.AppServerPort).Value;
+
+        return $"{host}:{port}/{hub}";
+    }
+
+    private void MessageChanged(string value)
+    {
+        var messageValue = Model.Message.Trim();
+
+        Model.Message = messageValue;
+
+        if (messageValue.Count() > 0)
+        {
+            IsDisabled = false;
+        }
+        else
+        {
+            IsDisabled = true;
+        }
+
+        StateHasChanged();
+    }
+
+    private class ChatModel
+    {
+        private string message;
+        public string Message
+        {
+            get
+            {
+                return message;
+            }
+            set
+            {
+                MessageChanged(value);
+                message = value;
+            }
+        }
+
+        public List<string> Messages { get; set; } = new();
+    }
+}
