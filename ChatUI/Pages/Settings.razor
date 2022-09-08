@@ -9,32 +9,70 @@
 
 <h3>Settings</h3>
 
-<EditForm Model="appSettings" OnValidSubmit="SaveSettings">
-    <InputText id="host" @bind-Value="appSettings.AppServerHost" />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm Model="appSettings" OnValidSubmit="SaveSettings">
 
-    <InputText id="port" @bind-Value="appSettings.AppServerPort" />
+            <div class="input-group mb-3">
+                <label for="host">Host</label>
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">@Protocols.First(x => x.Selected).Name</button>
+                <ul class="dropdown-menu">
+                    @foreach (var protocol in Protocols)
+                    {
+                        <li><p class="dropdown-item" @onclick="(() => ProtocolChange(protocol.Name))">@protocol.Name</p></li>
+                    }
+                </ul>
+                <InputText id="host" DisplayName="host" class="form-control" @bind-Value="appSettings.AppServerHost" />
+            </div>
 
-    <button type="submit">Submit</button>
-</EditForm>
+            <div class="mb-3">
+                <label for="port">Port</label>
+                <InputNumber id="port" DisplayName="port" class="form-control" @bind-Value="appSettings.AppServerPort" />
+            </div>
+
+            <div class="mb-3">
+                <label for="">Choose avatar</label>
+                <LocalChatApp.Components.Settings.DefaultAvatars @bind-UserAvatar="@appSettings.DefaultAvatar" />
+            </div>
+
+
+            <button type="submit" class="btn btn-primary">Save</button>
+        </EditForm>
+    </div>
+</div>
+
 
 @code {
     private AppSettingsModel appSettings = new();
+    private List<HostProtocol> Protocols = new List<HostProtocol>
+    {
+        new HostProtocol { Name = "HTTP" },
+        new HostProtocol { Name = "HTTPS" }
+    };
 
     protected override async Task OnInitializedAsync()
     {
         var settings = await AppSettingsService.GetAllAsync();
 
-        appSettings.AppServerHost = settings.SingleOrDefault(x => x.Id == AppSettingsItemKeyEnum.AppServerHost)?.Value;
-        appSettings.AppServerPort = settings.SingleOrDefault(x => x.Id == AppSettingsItemKeyEnum.AppServerPort)?.Value;
+        var hostUrl = settings.SingleOrDefault(x => x.Id == AppSettingsItemKeyEnum.AppServerHost)?.Value;
 
-        //return base.OnInitializedAsync();
+        (string Protocol, string Host) = DestructHostUrl(hostUrl);
+
+        Protocols.First(x => string.Equals(x.Name, Protocol, StringComparison.OrdinalIgnoreCase)).Selected = true;
+
+        appSettings.AppServerHost = Host;
+        appSettings.AppServerPort = int.Parse(settings.SingleOrDefault(x => x.Id == AppSettingsItemKeyEnum.AppServerPort)?.Value ?? "0");
+        appSettings.DefaultAvatar = settings.SingleOrDefault(x => x.Id == AppSettingsItemKeyEnum.DefaultAvatar)?.Value;
     }
 
     private async Task SaveSettings()
     {
-        var allSettings = new List<AppSettingsItem>{
-            new AppSettingsItem {Id = AppSettingsItemKeyEnum.AppServerHost, Value = appSettings.AppServerHost},
-            new AppSettingsItem {Id = AppSettingsItemKeyEnum.AppServerPort, Value = appSettings.AppServerPort}
+        var hostUrl = string.Join("://", Protocols.First(x => x.Selected).Name.ToLower(), appSettings.AppServerHost);
+
+        var allSettings = new List<AppSettingsItemEntity>{
+            new AppSettingsItemEntity {Id = AppSettingsItemKeyEnum.AppServerHost, Value = hostUrl},
+            new AppSettingsItemEntity {Id = AppSettingsItemKeyEnum.AppServerPort, Value = appSettings.AppServerPort.ToString()},
+            new AppSettingsItemEntity {Id = AppSettingsItemKeyEnum.DefaultAvatar, Value = appSettings.DefaultAvatar},
         };
 
         foreach (var item in allSettings)
@@ -43,5 +81,36 @@
         }
 
         NavManager.NavigateTo("/");
+    }
+
+    private (string Protocol, string Host) DestructHostUrl(string url)
+    {
+        var hostParts = url.Split("://");
+        var protocol = hostParts[0];
+        var hostName = hostParts[1];
+
+        return (protocol, hostName);
+    }
+
+    private void ProtocolChange(string protocol)
+    {
+        Protocols.ForEach(x =>
+        {
+            if (x.Name == protocol)
+            {
+                x.Selected = true;
+            }
+            else
+            {
+                x.Selected = false;
+            }
+        });
+    }
+
+    private class HostProtocol
+    {
+        public string Name { get; set; }
+
+        public bool Selected { get; set; }
     }
 }

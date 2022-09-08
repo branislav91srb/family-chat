@@ -2,7 +2,7 @@
 
 namespace LocalChatApp.Data.Enitites
 {
-    public class AppSettingsItem
+    public class AppSettingsItemEntity
     {
         [Key]
         public AppSettingsItemKeyEnum Id { get; set; }
@@ -15,6 +15,7 @@ namespace LocalChatApp.Data.Enitites
     public enum AppSettingsItemKeyEnum
     {
         AppServerHost = 1,
-        AppServerPort = 2
+        AppServerPort = 2,
+        DefaultAvatar = 3
     }
 }

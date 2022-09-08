@@ -68,7 +68,11 @@ app.MapGet("/getmessages/{number:int}", async ([FromServices] IMessageRepository
     {
         var messageresponse = new Message
         {
-            From = message.From,
+            Sender = new MessageSender
+            {
+                UserName = message.From,
+                Avatar = "379332_boss_2.svg",
+            },
             SendTime = message.SendTime,
             Text = message.Text
         };

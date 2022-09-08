@@ -1,0 +1,14 @@
+﻿.active {
+    border: 2px dashed blue;
+}
+
+.image-box {
+    display: inline-block;
+    margin: 5px;
+    position: relative;
+    cursor: pointer;
+}
+
+    .image-box > img {
+        position: relative;
+    }

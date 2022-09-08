@@ -347,7 +347,8 @@
     -o-transform: translate(0, 0);
     transform: translate(0, 0);
     padding: 10px;
-    height: 250px;
+    min-height: 250px;
+    height: 500px;
     overflow: auto;
 }
 

@@ -19,12 +19,12 @@ namespace LocalChatApp.Services
             _db = db;
         }
 
-        public async Task<List<AppSettingsItem>> GetAllAsync()
+        public async Task<List<AppSettingsItemEntity>> GetAllAsync()
         {
            return await _db.AppSettings.ToListAsync();
         }
 
-        public async Task SaveAsync(AppSettingsItem appSettingItem)
+        public async Task SaveAsync(AppSettingsItemEntity appSettingItem)
         {
             var item = _db.AppSettings.SingleOrDefault(x => x.Id == appSettingItem.Id);
 

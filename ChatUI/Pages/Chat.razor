@@ -16,17 +16,16 @@
 <br />
 
 <div class="row bootstrap">
-    @if (ChatModel is null)
+    @if (ChatModel != null)
     {
-        <div class="d-flex align-items-center">
-            <strong>Loading...</strong>
-            <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div>
-        </div>
-
+        <Messages Model="ChatModel" />
     }
     else
     {
-        <Messages Model="ChatModel" />
+        <div class="d-flex align-items-center">
+            <strong>Connecting to chat server... </strong>
+            <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div>
+        </div>
     }
 </div>
 

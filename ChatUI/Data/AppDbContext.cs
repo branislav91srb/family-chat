@@ -1,18 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using LocalChatApp.Data.Enitites;
 
 namespace LocalChatApp.Data
 {
     public class AppDbContext : DbContext
     {
-        public DbSet<AppSettingsItem> AppSettings { get; set; }
-
+        public DbSet<AppSettingsItemEntity> AppSettings { get; set; }
 
         public AppDbContext(DbContextOptions options) : base(options)
         {
@@ -26,7 +19,7 @@ namespace LocalChatApp.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<AppSettingsItem>().ToTable("AppSettings");
+            modelBuilder.Entity<AppSettingsItemEntity>().ToTable("AppSettings");
 
             base.OnModelCreating(modelBuilder);
         }

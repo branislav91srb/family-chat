@@ -6,9 +6,10 @@
 
 @inject IServerUriService ServerUriService
 @inject IJSRuntime _jsRuntime;
+@inject IAppSettingsService _appSettingsService
 
-
-<div class="col-md-4">
+@*https://codepen.io/anwar0x09/pen/zMRyBx*@
+<div class="col-lg-6 col-md-12 col-sm-12">
     <!-- DIRECT CHAT PRIMARY -->
     <div class="box box-primary direct-chat direct-chat-primary">
         <div class="box-header with-border">
@@ -34,16 +35,16 @@
 
                 @foreach (var message in Model.Messages)
                 {
-                    @if (message.From.Equals("system", StringComparison.OrdinalIgnoreCase))
+                    @if (message.Sender.UserName.Equals("system", StringComparison.OrdinalIgnoreCase))
                     {
                         <!-- Message. Default to the left -->
                         <div class="direct-chat-msg">
                             <div class="direct-chat-info clearfix">
-                                <span class="direct-chat-name pull-left">@message.From</span>
+                                <span class="direct-chat-name pull-left">@message.Sender.UserName</span>
                                 <span class="direct-chat-timestamp pull-right">@message.SendTime</span>
                             </div>
                             <!-- /.direct-chat-info -->
-                            <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_3.jpg" alt="Message User Image" style="width:30px!important;height:30px!important;"><!-- /.direct-chat-img -->
+                            <img class="direct-chat-img" src="images/default-avatars/379476_furby.svg" alt="Message User Image" style="width:30px!important;height:30px!important;"><!-- /.direct-chat-img -->
                             <div class="direct-chat-text" style="font-size:10px!important;">
                                 @message.Text
                             </div>
@@ -51,16 +52,16 @@
                         </div>
                         <!-- /.direct-chat-msg -->
                     }
-                    else if (message.From != DeviceInfo.Name)
+                    else if (message.Sender.UserName != DeviceInfo.Name)
                     {
                         <!-- Message. Default to the left -->
                         <div class="direct-chat-msg">
                             <div class="direct-chat-info clearfix">
-                                <span class="direct-chat-name pull-left">@message.From</span>
+                                <span class="direct-chat-name pull-left">@message.Sender.UserName</span>
                                 <span class="direct-chat-timestamp pull-right">@message.SendTime</span>
                             </div>
                             <!-- /.direct-chat-info -->
-                            <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_2.jpg" alt="Message User Image"><!-- /.direct-chat-img -->
+                            <img class="direct-chat-img" src="images/default-avatars/@message.Sender.Avatar" alt="Message User Image"><!-- /.direct-chat-img -->
                             <div class="direct-chat-text">
                                 @message.Text
                             </div>
@@ -74,11 +75,11 @@
                         <!-- Message to the right -->
                         <div class="direct-chat-msg right">
                             <div class="direct-chat-info clearfix">
-                                <span class="direct-chat-name pull-right">@message.From</span>
+                                <span class="direct-chat-name pull-right">@message.Sender.UserName</span>
                                 <span class="direct-chat-timestamp pull-left">@message.SendTime</span>
                             </div>
                             <!-- /.direct-chat-info -->
-                            <img class="direct-chat-img" src="https://bootdey.com/img/Content/user_1.jpg" alt="Message User Image"><!-- /.direct-chat-img -->
+                            <img class="direct-chat-img" src="images/default-avatars/@message.Sender.Avatar" alt="Message User Image"><!-- /.direct-chat-img -->
                             <div class="direct-chat-text">
                                 @message.Text
                             </div>
@@ -140,10 +141,17 @@
 
     private HubConnection Connection;
 
+    private string MyAvatar = string.Empty;
+
+
     private string currentMessageText = "";
 
     protected override async Task OnInitializedAsync()
     {
+        var settings = await _appSettingsService.GetAllAsync();
+        var avatar = settings.First(x => x.Id == AppSettingsItemKeyEnum.DefaultAvatar);
+        MyAvatar = avatar.Value;
+
         var chatUrl = await GetChatServerUrl();
 
         Connection = new HubConnectionBuilder()
@@ -162,7 +170,11 @@
             return;
         }
 
-        await Connection.SendAsync("SendMessage", DeviceInfo.Name, Model.Message);
+        await Connection.SendAsync("SendMessage", new MessageSender 
+        { 
+            UserName = DeviceInfo.Name,
+            Avatar = MyAvatar
+        }, Model.Message);
 
         Model.Message = string.Empty;
 
@@ -178,7 +190,7 @@
         Model.Messages.Add(message);
         StateHasChanged();
 
-        if (message.From != DeviceInfo.Name)
+        if (message.Sender.UserName != DeviceInfo.Name)
         {
             await _jsRuntime.InvokeAsync<string>("PlayNotificationSound", "message-notification-sound");
         }

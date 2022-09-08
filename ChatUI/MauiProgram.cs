@@ -3,6 +3,7 @@ using LocalChatApp.Services;
 using LocalChatApp.Services.Abstraction;
 using LocalChatApp.WinUI;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Maui.Hosting;
 
 namespace LocalChatApp
 {
@@ -11,6 +12,7 @@ namespace LocalChatApp
         public static MauiApp CreateMauiApp()
         {
             var builder = MauiApp.CreateBuilder();
+
             builder
                 .UseMauiApp<App>()
                 .ConfigureFonts(fonts =>
@@ -18,7 +20,13 @@ namespace LocalChatApp
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 });
 
-            builder.Services.AddDbContext<AppDbContext>(opt => {
+            builder.Services.AddMauiBlazorWebView();
+#if DEBUG
+            builder.Services.AddBlazorWebViewDeveloperTools();
+#endif
+
+            builder.Services.AddDbContext<AppDbContext>(opt =>
+            {
 
                 var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
                 var dbPath = Path.Combine(appData, "localchat.db");
@@ -36,12 +44,7 @@ namespace LocalChatApp
 
             //builder.Configuration.AddConfiguration(config);
 
-            builder.Services.AddMauiBlazorWebView();
-#if DEBUG
-            builder.Services.AddBlazorWebViewDeveloperTools();
-#endif
 
-            builder.Services.AddSingleton<WeatherForecastService>();
             builder.Services.AddHttpClient();
 
             builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
@@ -53,7 +56,7 @@ namespace LocalChatApp
             {
                 Seed.SeedSettings(scope);
             }
-                
+
             return app;
         }
     }

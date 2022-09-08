@@ -1,4 +1,5 @@
 ﻿using LocalChatApp.Data.Enitites;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocalChatApp.Data
@@ -14,14 +15,14 @@ namespace LocalChatApp.Data
             if (alreadyExists)
                 return;
 
-            var settings = new List<AppSettingsItem> {
-                new AppSettingsItem { Id = AppSettingsItemKeyEnum.AppServerHost, Value="http://localhost" },
-                new AppSettingsItem { Id = AppSettingsItemKeyEnum.AppServerPort, Value="9001"}
+            var settings = new List<AppSettingsItemEntity> {
+                new AppSettingsItemEntity { Id = AppSettingsItemKeyEnum.AppServerHost, Value="http://localhost" },
+                new AppSettingsItemEntity { Id = AppSettingsItemKeyEnum.AppServerPort, Value="9001"},
+                new AppSettingsItemEntity { Id = AppSettingsItemKeyEnum.AppServerPort, Value="9001"},
             };
 
             context.AppSettings.AddRange(settings);
             context.SaveChanges();
         }
-
     }
 }

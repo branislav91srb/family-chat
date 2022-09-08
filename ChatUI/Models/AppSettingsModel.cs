@@ -4,6 +4,8 @@
     {
         public string AppServerHost { get; set; }
 
-        public string AppServerPort { get; set; }
+        public int AppServerPort { get; set; }
+
+        public string DefaultAvatar { get; set; }
     }
 }

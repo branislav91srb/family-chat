@@ -4,8 +4,8 @@ namespace LocalChatApp.Services.Abstraction
 {
     public interface IAppSettingsService
     {
-        Task SaveAsync(AppSettingsItem appSettingItem);
+        Task SaveAsync(AppSettingsItemEntity appSettingItem);
 
-        Task<List<AppSettingsItem>> GetAllAsync();
+        Task<List<AppSettingsItemEntity>> GetAllAsync();
     }
 }

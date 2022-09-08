@@ -16,14 +16,14 @@ namespace ChatServer.Hubs
             _messageRepository = messageRepository;
         }
 
-        public async Task SendMessage(string user, string message)
+        public async Task SendMessage(MessageSender sender, string message)
         {
-            _logger.LogWarning($"{user} sent a message.");
+            _logger.LogWarning($"{sender.UserName} sent a message.");
 
             var messageData = new Message
             {
                 Text = message,
-                From = user,
+                Sender = sender,
                 MessageType = MessageTypeEnum.Message
             };
 
@@ -31,7 +31,7 @@ namespace ChatServer.Hubs
 
             await _messageRepository.SaveMessageAsync(new MessageEntity
             {
-                From = user,
+                From = sender.UserName,
                 To = "All",
                 SendTime = DateTime.Now,
                 Text = message
@@ -47,7 +47,11 @@ namespace ChatServer.Hubs
             var messageData = new Message
             {
                 Text = $"{user} entered the room!",
-                From = "System",
+                Sender = new MessageSender
+                {
+                    UserName = "System",
+                    Avatar = "379476_furby.svg"
+                },
                 MessageType = MessageTypeEnum.Notification
             };
 
@@ -70,7 +74,11 @@ namespace ChatServer.Hubs
             var messageData = new Message
             {
                 Text = $"{user} left the room!",
-                From = "System",
+                Sender = new MessageSender
+                {
+                    UserName = "System",
+                    Avatar = "379476_furby.svg"
+                },
                 MessageType = MessageTypeEnum.Notification
             };
 
