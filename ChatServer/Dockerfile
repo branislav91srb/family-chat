@@ -19,4 +19,8 @@ RUN dotnet publish "ChatServer.csproj" -c Release -r linux-arm64 --self-containe
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+# Creating folder for SQLite because EF want do that
+RUN mkdir -m 777 ./db 
+
 ENTRYPOINT ["dotnet", "ChatServer.dll"]
