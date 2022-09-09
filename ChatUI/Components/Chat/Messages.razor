@@ -1,4 +1,5 @@
 ﻿@using Contracts
+@using Contracts.Models
 @using LocalChatApp.Data.Enitites
 @using LocalChatApp.Models
 @using LocalChatApp.Services.Abstraction
@@ -7,6 +8,7 @@
 @inject IServerUriService ServerUriService
 @inject IJSRuntime _jsRuntime;
 @inject IAppSettingsService _appSettingsService
+@inject IChatHubConnectionFactory _chatHubConnectionFactory
 
 @*https://codepen.io/anwar0x09/pen/zMRyBx*@
 <div class="col-lg-6 col-md-12 col-sm-12">
@@ -32,97 +34,28 @@
 
 
             <div class="direct-chat-messages">
-
                 @foreach (var message in Model.Messages)
                 {
-                    @if (message.Sender.UserName.Equals("system", StringComparison.OrdinalIgnoreCase))
-                    {
-                        <!-- Message. Default to the left -->
-                        <div class="direct-chat-msg">
-                            <div class="direct-chat-info clearfix">
-                                <span class="direct-chat-name pull-left">@message.Sender.UserName</span>
-                                <span class="direct-chat-timestamp pull-right">@message.SendTime</span>
-                            </div>
-                            <!-- /.direct-chat-info -->
-                            <img class="direct-chat-img" src="images/default-avatars/379476_furby.svg" alt="Message User Image" style="width:30px!important;height:30px!important;"><!-- /.direct-chat-img -->
-                            <div class="direct-chat-text" style="font-size:10px!important;">
-                                @message.Text
-                            </div>
-                            <!-- /.direct-chat-text -->
-                        </div>
-                        <!-- /.direct-chat-msg -->
-                    }
-                    else if (message.Sender.UserName != DeviceInfo.Name)
-                    {
-                        <!-- Message. Default to the left -->
-                        <div class="direct-chat-msg">
-                            <div class="direct-chat-info clearfix">
-                                <span class="direct-chat-name pull-left">@message.Sender.UserName</span>
-                                <span class="direct-chat-timestamp pull-right">@message.SendTime</span>
-                            </div>
-                            <!-- /.direct-chat-info -->
-                            <img class="direct-chat-img" src="images/default-avatars/@message.Sender.Avatar" alt="Message User Image"><!-- /.direct-chat-img -->
-                            <div class="direct-chat-text">
-                                @message.Text
-                            </div>
-                            <!-- /.direct-chat-text -->
-                        </div>
-                        <!-- /.direct-chat-msg -->
-                    }
-
-                    else
-                    {
-                        <!-- Message to the right -->
-                        <div class="direct-chat-msg right">
-                            <div class="direct-chat-info clearfix">
-                                <span class="direct-chat-name pull-right">@message.Sender.UserName</span>
-                                <span class="direct-chat-timestamp pull-left">@message.SendTime</span>
-                            </div>
-                            <!-- /.direct-chat-info -->
-                            <img class="direct-chat-img" src="images/default-avatars/@message.Sender.Avatar" alt="Message User Image"><!-- /.direct-chat-img -->
-                            <div class="direct-chat-text">
-                                @message.Text
-                            </div>
-                            <!-- /.direct-chat-text -->
-                        </div>
-                        <!-- /.direct-chat-msg -->
-                    }
+                    <LocalChatApp.Components.Chat.MessageParts.Message Model="message" />
                 }
             </div>
 
             <!--/.direct-chat-messages-->
             <!-- Contacts are loaded here -->
-            <div class="direct-chat-contacts">
-                <ul class="contacts-list">
-                    <li>
-                        <a href="#">
-                            <img class="contacts-list-img" src="https://bootdey.com/img/Content/user_1.jpg">
-
-                            <div class="contacts-list-info">
-                                <span class="contacts-list-name">
-                                    Count Dracula
-                                    <small class="contacts-list-date pull-right">2/28/2015</small>
-                                </span>
-                                <span class="contacts-list-msg">How have you been? I was...</span>
-                            </div>
-                            <!-- /.contacts-list-info -->
-                        </a>
-                    </li>
-                    <!-- End Contact Item -->
-                </ul>
-                <!-- /.contatcts-list -->
-            </div>
+            <LocalChatApp.Components.Chat.MessageParts.OnlineUsers Model="OnlineUsers" />
             <!-- /.direct-chat-pane -->
         </div>
         <!-- /.box-body -->
         <div class="box-footer">
             <EditForm Model="Model" OnValidSubmit="SendMessage" autocomplete="off">
                 <div class="input-group">
+
                     <InputText name="message" class="form-control"
                                @bind-Value="Model.Message"
                                @oninput="((e) => MessageChanged(e))"
                                @onkeyup="((e) => SendIfEnter(e))"
                                autocomplete="off" placeholder="Type Message ..." />
+
                     <span class="input-group-btn">
                         <button type="submit" class="btn btn-primary btn-flat" disabled=@(!currentMessageText.Trim().Any())>Send</button>
                     </span>
@@ -139,10 +72,11 @@
     [Parameter]
     public ChatModel Model { get; set; }
 
+    private IEnumerable<ChatUserModel> OnlineUsers = Enumerable.Empty<ChatUserModel>();
+
     private HubConnection Connection;
 
     private string MyAvatar = string.Empty;
-
 
     private string currentMessageText = "";
 
@@ -152,13 +86,15 @@
         var avatar = settings.First(x => x.Id == AppSettingsItemKeyEnum.DefaultAvatar);
         MyAvatar = avatar.Value;
 
-        var chatUrl = await GetChatServerUrl();
 
-        Connection = new HubConnectionBuilder()
-            .WithUrl(chatUrl)
-            .Build();
+        Connection = await _chatHubConnectionFactory.CreateConnectionAsync(new Dictionary<string, string>
+        {
+            {"X-USER-NAME", DeviceInfo.Name},
+            {"X-AVATAR", MyAvatar}
+        });
 
         Connection.On<Message>("ReceiveMessage", ReceiveMessage);
+        Connection.On<List<ChatUserModel>>("UpdateOnlineUsers", UpdateOnlineUsers);
 
         await Connection.StartAsync();
     }
@@ -170,11 +106,11 @@
             return;
         }
 
-        await Connection.SendAsync("SendMessage", new MessageSender 
-        { 
-            UserName = DeviceInfo.Name,
-            Avatar = MyAvatar
-        }, Model.Message);
+        await Connection.SendAsync("SendMessage", new MessageSender
+            {
+                UserName = DeviceInfo.Name,
+                Avatar = MyAvatar
+            }, Model.Message);
 
         Model.Message = string.Empty;
 
@@ -196,6 +132,13 @@
         }
     }
 
+    public Task UpdateOnlineUsers(List<ChatUserModel> onlineUsers)
+    {
+        OnlineUsers = onlineUsers ?? Enumerable.Empty<ChatUserModel>();
+
+        return Task.CompletedTask;
+    }
+
     private async Task SendIfEnter(KeyboardEventArgs e)
     {
         if (e.Code == "Enter" || e.Code == "NumpadEnter")
@@ -207,13 +150,5 @@
     private void MessageChanged(ChangeEventArgs e)
     {
         currentMessageText = e.Value.ToString();
-    }
-
-    private async Task<string> GetChatServerUrl()
-    {
-        var hub = "chatHub";
-        var serverUri = await ServerUriService.GetServerUriAsync();
-
-        return $"{serverUri}/{hub}";
     }
 }

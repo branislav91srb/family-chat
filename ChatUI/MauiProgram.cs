@@ -1,9 +1,7 @@
 ﻿using LocalChatApp.Data;
 using LocalChatApp.Services;
 using LocalChatApp.Services.Abstraction;
-using LocalChatApp.WinUI;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Maui.Hosting;
 
 namespace LocalChatApp
 {
@@ -27,8 +25,7 @@ namespace LocalChatApp
 
             builder.Services.AddDbContext<AppDbContext>(opt =>
             {
-
-                var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                var appData = FileSystem.Current.AppDataDirectory;
                 var dbPath = Path.Combine(appData, "localchat.db");
                 opt.UseSqlite($"Filename={dbPath}");
             });
@@ -49,6 +46,7 @@ namespace LocalChatApp
 
             builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
             builder.Services.AddScoped<IServerUriService, ServerUriService>();
+            builder.Services.AddScoped<IChatHubConnectionFactory, ChatHubConnectionFactory>();
 
             var app = builder.Build();
 

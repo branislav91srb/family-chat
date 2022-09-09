@@ -18,7 +18,7 @@ namespace LocalChatApp.Data
             var settings = new List<AppSettingsItemEntity> {
                 new AppSettingsItemEntity { Id = AppSettingsItemKeyEnum.AppServerHost, Value="http://localhost" },
                 new AppSettingsItemEntity { Id = AppSettingsItemKeyEnum.AppServerPort, Value="9001"},
-                new AppSettingsItemEntity { Id = AppSettingsItemKeyEnum.AppServerPort, Value="9001"},
+                new AppSettingsItemEntity { Id = AppSettingsItemKeyEnum.DefaultAvatar, Value=""},
             };
 
             context.AppSettings.AddRange(settings);

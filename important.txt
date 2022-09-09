@@ -1,5 +1,8 @@
-# Publish MAUI app
+# Publish Windows
 dotnet publish -f net6.0-windows10.0.19041.0 -c Release
+
+# Publish Android
+dotnet publish -f net6.0-android -c Release
 
 # Build docker image
 docker rmi $(docker images branislav91/local-chat-server -q) -f

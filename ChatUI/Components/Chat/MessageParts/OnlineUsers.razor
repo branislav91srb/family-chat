@@ -1,0 +1,22 @@
+﻿@using Contracts.Models
+
+<div class="direct-chat-contacts-simple">
+    <ul class="contacts-list">
+        @foreach (var item in Model ?? Enumerable.Empty<ChatUserModel>())
+        {
+            <li>
+                <div data-bs-toggle="tooltip" data-bs-placement="top" title="@item.UserName">
+                    <img class="contacts-list-img" src="images/default-avatars/@item.Avatar">
+                </div>
+            </li>
+            <!-- End Contact Item -->
+        }
+
+    </ul>
+    <!-- /.contatcts-list -->
+</div>
+
+@code {
+    [Parameter]
+    public IEnumerable<ChatUserModel> Model { get; set; }
+}

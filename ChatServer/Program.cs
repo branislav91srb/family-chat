@@ -26,11 +26,12 @@ builder.Services.AddDbContext<ServerDbContext>(opt => {
 
 
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddSingleton<ConnectedUsersStore>();
 
 var app = builder.Build();
 
 
-app.MapHub<ChatHub>("/chatHub");
+app.MapHub<ChatHub>("/chatHub"); 
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
