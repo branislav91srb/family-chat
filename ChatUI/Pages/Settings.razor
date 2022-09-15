@@ -5,6 +5,7 @@
 
 @inject IAppSettingsService AppSettingsService
 @inject NavigationManager NavManager
+@inject IAppUpdater AppUpdater
 @*@inject ILogger<Settings> Logger*@
 
 <h3>Settings</h3>
@@ -30,6 +31,11 @@
             </div>
 
             <div class="mb-3">
+                <label for="update-url">Update Url</label>
+                <InputText id="update-url" DisplayName="update-url" class="form-control" @bind-Value="appSettings.UpdateUrl" />
+            </div>
+
+            <div class="mb-3">
                 <label for="">Choose avatar</label>
                 <LocalChatApp.Components.Settings.DefaultAvatars @bind-UserAvatar="@appSettings.DefaultAvatar" />
             </div>
@@ -37,6 +43,21 @@
 
             <button type="submit" class="btn btn-primary">Save</button>
         </EditForm>
+    </div>
+
+    <div class="col-md-4">
+        <h1 class="display-4">Update your application</h1>
+        @if (!string.IsNullOrEmpty(UpdateNotificationText))
+        {
+            <div class="alert alert-info" role="alert">
+                @UpdateNotificationText
+            </div>
+            <button type="button" class="btn btn-warning" disabled>Update</button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-warning" @onclick="(() => UpdateApp())">Update</button>
+        }
     </div>
 </div>
 
@@ -48,6 +69,8 @@
         new HostProtocol { Name = "HTTP" },
         new HostProtocol { Name = "HTTPS" }
     };
+
+    private string UpdateNotificationText = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -62,6 +85,7 @@
         appSettings.AppServerHost = Host;
         appSettings.AppServerPort = int.Parse(settings.SingleOrDefault(x => x.Id == AppSettingsItemKeyEnum.AppServerPort)?.Value ?? "0");
         appSettings.DefaultAvatar = settings.SingleOrDefault(x => x.Id == AppSettingsItemKeyEnum.DefaultAvatar)?.Value;
+        appSettings.UpdateUrl = settings.SingleOrDefault(x => x.Id == AppSettingsItemKeyEnum.UpdateUrl)?.Value;
     }
 
     private async Task SaveSettings()
@@ -72,6 +96,7 @@
             new AppSettingsItemEntity {Id = AppSettingsItemKeyEnum.AppServerHost, Value = hostUrl},
             new AppSettingsItemEntity {Id = AppSettingsItemKeyEnum.AppServerPort, Value = appSettings.AppServerPort.ToString()},
             new AppSettingsItemEntity {Id = AppSettingsItemKeyEnum.DefaultAvatar, Value = appSettings.DefaultAvatar},
+            new AppSettingsItemEntity {Id = AppSettingsItemKeyEnum.UpdateUrl, Value = appSettings.UpdateUrl}
         };
 
         foreach (var item in allSettings)
@@ -104,6 +129,34 @@
                 x.Selected = false;
             }
         });
+    }
+
+    private async Task UpdateApp()
+    {
+        UpdateNotificationText = "Updating app! Please wait...";
+        var filePath = await AppUpdater.DownloadUpdate();
+        UpdateNotificationText = "Update packages downloaded. Wait for update....";
+
+        StateHasChanged();
+
+        if (filePath is not null)
+        {
+            try
+            {
+                var updated = await AppUpdater.Update(filePath);
+                UpdateNotificationText = "App has been updated!";
+            }
+            catch (Exception ex)
+            {
+                UpdateNotificationText = ex.Message;
+            }
+
+            
+            StateHasChanged();
+        }
+
+        await Task.Delay(5000);
+        UpdateNotificationText = string.Empty;
     }
 
     private class HostProtocol

@@ -5,7 +5,7 @@
         @foreach (var item in Model ?? Enumerable.Empty<ChatUserModel>())
         {
             <li>
-                <div data-bs-toggle="tooltip" data-bs-placement="top" title="@item.UserName">
+                <div data-bs-toggle="tooltip" data-bs-placement="top" data-bs-trigger="hover click" title="@item.UserName">
                     <img class="contacts-list-img" src="images/default-avatars/@item.Avatar">
                 </div>
             </li>

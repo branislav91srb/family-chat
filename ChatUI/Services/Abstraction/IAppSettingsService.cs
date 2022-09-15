@@ -7,5 +7,7 @@ namespace LocalChatApp.Services.Abstraction
         Task SaveAsync(AppSettingsItemEntity appSettingItem);
 
         Task<List<AppSettingsItemEntity>> GetAllAsync();
+
+        Task<AppSettingsItemEntity> GetAsync(AppSettingsItemKeyEnum id);
     }
 }

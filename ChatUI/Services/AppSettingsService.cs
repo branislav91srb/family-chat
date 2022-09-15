@@ -2,11 +2,6 @@
 using LocalChatApp.Data.Enitites;
 using LocalChatApp.Services.Abstraction;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LocalChatApp.Services
 {
@@ -22,6 +17,11 @@ namespace LocalChatApp.Services
         public async Task<List<AppSettingsItemEntity>> GetAllAsync()
         {
            return await _db.AppSettings.ToListAsync();
+        }
+
+        public async Task<AppSettingsItemEntity> GetAsync(AppSettingsItemKeyEnum id)
+        {
+            return await _db.AppSettings.SingleOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task SaveAsync(AppSettingsItemEntity appSettingItem)

@@ -7,5 +7,7 @@
         public int AppServerPort { get; set; }
 
         public string DefaultAvatar { get; set; }
+
+        public string UpdateUrl { get; set; }
     }
 }

@@ -16,6 +16,7 @@ namespace LocalChatApp.Data.Enitites
     {
         AppServerHost = 1,
         AppServerPort = 2,
-        DefaultAvatar = 3
+        DefaultAvatar = 3,
+        UpdateUrl = 4
     }
 }

@@ -31,22 +31,13 @@ namespace LocalChatApp
             });
             builder.Services.AddLogging();
 
-            //var assembly = Assembly.GetExecutingAssembly();
-            //using var stream = assembly.GetManifestResourceStream("LocalChatApp.appsettings.json");
-
-            //var config = new ConfigurationBuilder()
-            //            .AddJsonStream(stream)
-            //            .Build();
-
-
-            //builder.Configuration.AddConfiguration(config);
-
-
             builder.Services.AddHttpClient();
 
             builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
             builder.Services.AddScoped<IServerUriService, ServerUriService>();
             builder.Services.AddScoped<IChatHubConnectionFactory, ChatHubConnectionFactory>();
+            builder.Services.AddScoped<IAppUpdater, AppUpdater>();
+
 
             var app = builder.Build();
 

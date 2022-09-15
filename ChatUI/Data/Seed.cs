@@ -1,5 +1,4 @@
 ﻿using LocalChatApp.Data.Enitites;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocalChatApp.Data
@@ -19,6 +18,7 @@ namespace LocalChatApp.Data
                 new AppSettingsItemEntity { Id = AppSettingsItemKeyEnum.AppServerHost, Value="http://localhost" },
                 new AppSettingsItemEntity { Id = AppSettingsItemKeyEnum.AppServerPort, Value="9001"},
                 new AppSettingsItemEntity { Id = AppSettingsItemKeyEnum.DefaultAvatar, Value=""},
+                new AppSettingsItemEntity { Id = AppSettingsItemKeyEnum.UpdateUrl, Value="localhost"},
             };
 
             context.AppSettings.AddRange(settings);
