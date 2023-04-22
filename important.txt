@@ -8,4 +8,5 @@ dotnet publish -f net6.0-android -c Release
 docker rmi $(docker images branislav91/local-chat-server -q) -f
 docker build -t branislav91/local-chat-server -f .\ChatServer\Dockerfile .
 docker image tag branislav91/local-chat-server branislav91/local-chat-server:arm64-1.0.0
+docker image tag branislav91/local-chat-server branislav91/local-chat-server:latest
 docker push branislav91/local-chat-server --all-tags

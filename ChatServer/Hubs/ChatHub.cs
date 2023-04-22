@@ -1,10 +1,8 @@
 ﻿using ChatServer.Data.Entities;
-using ChatServer.Services;
 using ChatServer.Services.Abstraction;
 using Contracts;
 using Contracts.Models;
 using Microsoft.AspNetCore.SignalR;
-using System.Collections.Generic;
 
 namespace ChatServer.Hubs
 {
@@ -12,14 +10,14 @@ namespace ChatServer.Hubs
     {
         private readonly ILogger<ChatHub> _logger;
         private readonly IMessageRepository _messageRepository;
-        private ConnectedUsersStore _connectedUsersStore;
+        private readonly IConnectedUsersRepository _connectedUsersRepository;
 
 
-        public ChatHub(ILogger<ChatHub> logger, IMessageRepository messageRepository, ConnectedUsersStore connectedUsersStore)
+        public ChatHub(ILogger<ChatHub> logger, IMessageRepository messageRepository, IConnectedUsersRepository connectedUsersRepository)
         {
             _logger = logger;
             _messageRepository = messageRepository;
-            _connectedUsersStore = connectedUsersStore;
+            _connectedUsersRepository = connectedUsersRepository;
         }
 
         public async Task SendMessage(MessageSender sender, string message)
@@ -100,14 +98,15 @@ namespace ChatServer.Hubs
         {
             if (remove)
             {
-                _connectedUsersStore.RemoveUser(chatUser.UserName);
+                await _connectedUsersRepository.RemoveUserAsync(chatUser.ConnectionId);
             }
             else
             {
-                _connectedUsersStore.AddUser(chatUser);
+                await _connectedUsersRepository.AddUserAsync(chatUser);
             }
+            var allUsers = await _connectedUsersRepository.GetAllUsersAsync().ConfigureAwait(false);
 
-            await Clients.All.SendAsync("UpdateOnlineUsers", _connectedUsersStore.GetUserList()).ConfigureAwait(false);
+            await Clients.All.SendAsync("UpdateOnlineUsers", allUsers);
         }
 
         private ChatUserModel GetUserDataFromHeaders()
@@ -119,7 +118,8 @@ namespace ChatServer.Hubs
             return new ChatUserModel
             {
                 UserName = userName,
-                Avatar = userAvatar
+                Avatar = userAvatar,
+                ConnectionId = Context.ConnectionId
             };
         }
     }

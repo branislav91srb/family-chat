@@ -1,7 +1,6 @@
 using ChatServer.Data;
-using ChatServer.Data.Entities;
 using ChatServer.Hubs;
-using ChatServer.Requests;
+using ChatServer.Models;
 using ChatServer.Services;
 using ChatServer.Services.Abstraction;
 using Contracts;
@@ -24,14 +23,22 @@ builder.Services.AddDbContext<ServerDbContext>(opt => {
     opt.UseSqlite($"Filename={dbPath}");
 });
 
+builder.Services.AddMemoryCache();
+
+
+builder.Services.Configure<FtpSettings>(builder.Configuration.GetSection("FtpSettings"));
 
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
-builder.Services.AddSingleton<ConnectedUsersStore>();
+builder.Services.AddSingleton<IConnectedAppsRepository, ConnectedAppsRepository>();
+builder.Services.AddSingleton<IConnectedUsersRepository, ConnectedUsersRepository>();
+
+//builder.Services.AddHostedService<UpdateChacker>();
 
 var app = builder.Build();
 
-
+//app.MapHub<ApplicationHub>("/appHub");
 app.MapHub<ChatHub>("/chatHub"); 
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
