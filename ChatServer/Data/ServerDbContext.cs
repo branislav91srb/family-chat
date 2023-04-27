@@ -7,6 +7,8 @@ namespace ChatServer.Data
     {
         public DbSet<MessageEntity> Messages { get; set; }
 
+        public DbSet<UserEntity> Users { get; set; }
+
         public ServerDbContext(DbContextOptions options) : base(options)
         {
             Database.EnsureCreated();
@@ -20,6 +22,7 @@ namespace ChatServer.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<MessageEntity>().ToTable("Messages");
+            modelBuilder.Entity<UserEntity>().ToTable("Users");
 
             base.OnModelCreating(modelBuilder);
         }

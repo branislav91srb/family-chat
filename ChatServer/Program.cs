@@ -3,15 +3,13 @@ using ChatServer.Hubs;
 using ChatServer.Models;
 using ChatServer.Services;
 using ChatServer.Services.Abstraction;
-using Contracts;
-using Contracts.Responses;
+using Contracts.Requests;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddLogging();
@@ -29,6 +27,11 @@ builder.Services.AddMemoryCache();
 builder.Services.Configure<FtpSettings>(builder.Configuration.GetSection("FtpSettings"));
 
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+
 builder.Services.AddSingleton<IConnectedAppsRepository, ConnectedAppsRepository>();
 builder.Services.AddSingleton<IConnectedUsersRepository, ConnectedUsersRepository>();
 
@@ -47,49 +50,50 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-var summaries = new[]
+app.MapGet("/get-direct-messages/{user1:long}/{user2:long}/{number:int}", 
+    async ([FromServices] IMessageService messageService, [FromRoute] long user1, [FromRoute] long user2, [FromRoute] int number) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    var messages = await messageService.GetDirectMessagesAsync(user1, user2, number);
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateTime.Now.AddDays(index),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    return messages;
 })
-.WithName("GetWeatherForecast");
+.WithName("GetDirectMessages");
 
-app.MapGet("/getmessages/{number:int}", async ([FromServices] IMessageRepository repository, [FromRoute] int number) =>
+app.MapPost("/create-user", async ([FromServices] IUserService userService, [FromBody] RegisterUserRequest user) =>
 {
-    var messages = await repository.GetMessagesAsync(number);
+    return await userService.RegisterUserAsync(user);
+})
+.WithName("CreateUser");
 
-    var messagesResponse = new MessagesResponse();
-
-    foreach(var message in messages)
+app.MapPost("/login", async ([FromServices] IUserService userService, [FromBody] LoginRequest login) =>
+{
+    var user = await userService.GetUserByUsernameAndPasswordAsync(login.UserName, login.Password);
+    if (user == null)
     {
-        var messageresponse = new Message
-        {
-            Sender = new MessageSender
-            {
-                UserName = message.From,
-                Avatar = "379332_boss_2.svg",
-            },
-            SendTime = message.SendTime,
-            Text = message.Text
-        };
-
-        messagesResponse.Messages.Add(messageresponse);
+        return Results.Unauthorized();
     }
 
-    return messagesResponse;
+    return Results.Ok(user);
+
 })
-.WithName("GetMessages");
+.WithName("Login");
+
+app.MapPost("/saveuser", async ([FromServices] IUserService userService, [FromBody] SaveUserRequest user) =>
+{
+    return await userService.SaveUserAsync(user);
+})
+.WithName("SaveUser");
+
+app.MapGet("/getuser/{userId:long}", async ([FromServices] IUserService userService, [FromRoute] long userId) =>
+{
+    return await userService.GetUserByIdAsync(userId);
+})
+.WithName("GetUser");
+
+app.MapGet("/getusers", async ([FromServices] IUserService userService) =>
+{
+    return await userService.GetUsersAsync();
+})
+.WithName("GetUsers");
 
 app.Run();

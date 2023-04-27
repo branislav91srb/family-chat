@@ -7,9 +7,9 @@ namespace ChatServer.Data.Entities
         [Key]
         public long Id { get; set; }
 
-        public string From { get; set; }
+        public long From { get; set; }
 
-        public string To { get; set; }
+        public long To { get; set; }
 
         public DateTime SendTime { get; set; } = DateTime.Now;
 

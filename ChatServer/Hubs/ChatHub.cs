@@ -20,14 +20,14 @@ namespace ChatServer.Hubs
             _connectedUsersRepository = connectedUsersRepository;
         }
 
-        public async Task SendMessage(MessageSender sender, string message)
+        public async Task SendMessage(MessageFromTo fromTo, string message)
         {
-            _logger.LogWarning($"{sender.UserName} sent a message.");
+            _logger.LogWarning($"{fromTo.From} sent a message to {fromTo.To}.");
 
             var messageData = new Message
             {
                 Text = message,
-                Sender = sender,
+                Sender = fromTo.From,
                 MessageType = MessageTypeEnum.Message
             };
 
@@ -35,64 +35,56 @@ namespace ChatServer.Hubs
 
             await _messageRepository.SaveMessageAsync(new MessageEntity
             {
-                From = sender.UserName,
-                To = "All",
+                From = fromTo.From,
+                To = fromTo.To,
                 SendTime = DateTime.Now,
                 Text = message
             });
         }
 
-        public override async Task OnConnectedAsync()
-        {
-            var chatUser = GetUserDataFromHeaders();
+        //public override async Task OnConnectedAsync()
+        //{
+        //    var chatUser = GetUserDataFromHeaders();
 
-            await UpdateOnlineUsers(chatUser);
+        //    await UpdateOnlineUsers(chatUser);
 
-            _logger.LogInformation($"{0} entered the room!", chatUser.UserName);
+        //    _logger.LogInformation($"{0} entered the room!", chatUser.UserName);
 
-            var messageData = new Message
-            {
-                Text = $"{chatUser.UserName} entered the room!",
-                Sender = new MessageSender
-                {
-                    UserName = "System",
-                    Avatar = chatUser.Avatar
-                },
-                MessageType = MessageTypeEnum.Notification
-            };
+        //    var messageData = new Message
+        //    {
+        //        Text = $"{chatUser.UserName} entered the room!",
+        //        Sender = 0,
+        //        MessageType = MessageTypeEnum.Notification
+        //    };
 
-            await Clients.All.SendAsync("ReceiveMessage", messageData);
+        //    await Clients.All.SendAsync("ReceiveMessage", messageData);
 
-            await base.OnConnectedAsync();
-        }
+        //    await base.OnConnectedAsync();
+        //}
 
-        public override async Task OnDisconnectedAsync(Exception? exception)
-        {
-            if (exception is not null)
-            {
-                _logger.LogError(exception.Message, exception);
-            }
+        //public override async Task OnDisconnectedAsync(Exception? exception)
+        //{
+        //    if (exception is not null)
+        //    {
+        //        _logger.LogError(exception.Message, exception);
+        //    }
 
-            var chatUser = GetUserDataFromHeaders();
+        //    var chatUser = GetUserDataFromHeaders();
 
-            await UpdateOnlineUsers(chatUser);
+        //    await UpdateOnlineUsers(chatUser);
 
-            _logger.LogInformation($"{0} left the room!", chatUser.UserName);
+        //    _logger.LogInformation($"{0} left the room!", chatUser.UserName);
 
-            var messageData = new Message
-            {
-                Text = $"{chatUser.UserName} left the room!",
-                Sender = new MessageSender
-                {
-                    UserName = "System",
-                    Avatar = chatUser.Avatar
-                },
-                MessageType = MessageTypeEnum.Notification
-            };
+        //    var messageData = new Message
+        //    {
+        //        Text = $"{chatUser.UserName} left the room!",
+        //        Sender = 0,
+        //        MessageType = MessageTypeEnum.Notification
+        //    };
 
-            await Clients.All.SendAsync("ReceiveMessage", messageData);
-            await base.OnDisconnectedAsync(exception);
-        }
+        //    await Clients.All.SendAsync("ReceiveMessage", messageData);
+        //    await base.OnDisconnectedAsync(exception);
+        //}
 
         private async Task UpdateOnlineUsers(ChatUserModel chatUser, bool remove = false)
         {

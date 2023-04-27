@@ -1,7 +1,6 @@
 ﻿using ChatServer.Data;
 using ChatServer.Data.Entities;
 using ChatServer.Services.Abstraction;
-using Contracts;
 using Microsoft.EntityFrameworkCore;
 
 namespace ChatServer.Services
@@ -15,9 +14,12 @@ namespace ChatServer.Services
             _db = db;
         }
 
-        public async Task<List<MessageEntity>> GetMessagesAsync(int number = 10)
+        public async Task<List<MessageEntity>> GetDirectMessagesAsync(long user1, long user2, int number = 10)
         {
-            var messages = _db.Messages.OrderByDescending(x => x.SendTime).Take(number);
+            var messages = _db.Messages
+                .Where(x => (x.From == user1 && x.To == user2)
+                || (x.From == user2 && x.To == user1))
+                .OrderByDescending(x => x.SendTime).Take(number);
 
             return await messages.ToListAsync();
         }
