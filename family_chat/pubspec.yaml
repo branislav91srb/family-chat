@@ -12,14 +12,25 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_localizations:
+  flutter_easyloading: ^3.0.5
+  flutter_localizations: 
     sdk: flutter
+  intl: any
+  device_info_plus: ^8.2.0
+  http: ^0.13.5
+  dart_json_mapper: ^2.2.7+1
+  flutter_form_builder: ^8.0.0
+  form_builder_validators: ^8.5.0
+  shared_preferences: ^2.1.0
+  signalr_core: ^1.1.1
+  audioplayers: ^4.0.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^2.0.0
+  build_runner: ^2.3.3
 
 flutter:
   uses-material-design: true
@@ -30,3 +41,4 @@ flutter:
   assets:
     # Add assets from the images directory to the application.
     - assets/images/
+    - assets/sounds/
