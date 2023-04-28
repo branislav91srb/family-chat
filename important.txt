@@ -1,13 +1,12 @@
 # Publish Windows
-dotnet publish -f net6.0-windows10.0.19041.0 -c Release
+####
 
 # Publish Android
-dotnet publish -f net6.0-android -c Release
 flutter build apk --release
 
 # Build docker image
 docker rmi $(docker images branislav91/local-chat-server -q) -f
-docker build -t branislav91/local-chat-server -f .\ChatServer\Dockerfile .
-docker image tag branislav91/local-chat-server branislav91/local-chat-server:arm64-1.0.0
+docker build -t branislav91/local-chat-server -f .\ChatServer\Dockerfile . --no-cache
+docker image tag branislav91/local-chat-server branislav91/local-chat-server:arm64-1.1.x
 docker image tag branislav91/local-chat-server branislav91/local-chat-server:latest
 docker push branislav91/local-chat-server --all-tags
