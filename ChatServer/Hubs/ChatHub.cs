@@ -2,22 +2,27 @@
 using ChatServer.Services.Abstraction;
 using Contracts;
 using Contracts.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using System.Collections.Concurrent;
 
 namespace ChatServer.Hubs
 {
+    [Authorize]
     public class ChatHub : Hub
     {
+        private const string MessageReceiveEvent = "ReceiveMessage";
+        private const string UpdateOnlineUsersEvent = "UpdateOnlineUsers";
         private readonly ILogger<ChatHub> _logger;
         private readonly IMessageRepository _messageRepository;
-        private readonly IConnectedUsersRepository _connectedUsersRepository;
+        private readonly OnlineUsersHolder _onlineUsersHolder;
 
 
-        public ChatHub(ILogger<ChatHub> logger, IMessageRepository messageRepository, IConnectedUsersRepository connectedUsersRepository)
+        public ChatHub(ILogger<ChatHub> logger, IMessageRepository messageRepository, OnlineUsersHolder onlineUsersHolder)
         {
             _logger = logger;
             _messageRepository = messageRepository;
-            _connectedUsersRepository = connectedUsersRepository;
+            _onlineUsersHolder = onlineUsersHolder;
         }
 
         public async Task SendMessage(MessageFromTo fromTo, string message)
@@ -31,7 +36,7 @@ namespace ChatServer.Hubs
                 MessageType = MessageTypeEnum.Message
             };
 
-            await Clients.All.SendAsync("ReceiveMessage", messageData).ConfigureAwait(false);
+            await Clients.All.SendAsync(MessageReceiveEvent, messageData);
 
             await _messageRepository.SaveMessageAsync(new MessageEntity
             {
@@ -42,77 +47,45 @@ namespace ChatServer.Hubs
             });
         }
 
-        //public override async Task OnConnectedAsync()
-        //{
-        //    var chatUser = GetUserDataFromHeaders();
-
-        //    await UpdateOnlineUsers(chatUser);
-
-        //    _logger.LogInformation($"{0} entered the room!", chatUser.UserName);
-
-        //    var messageData = new Message
-        //    {
-        //        Text = $"{chatUser.UserName} entered the room!",
-        //        Sender = 0,
-        //        MessageType = MessageTypeEnum.Notification
-        //    };
-
-        //    await Clients.All.SendAsync("ReceiveMessage", messageData);
-
-        //    await base.OnConnectedAsync();
-        //}
-
-        //public override async Task OnDisconnectedAsync(Exception? exception)
-        //{
-        //    if (exception is not null)
-        //    {
-        //        _logger.LogError(exception.Message, exception);
-        //    }
-
-        //    var chatUser = GetUserDataFromHeaders();
-
-        //    await UpdateOnlineUsers(chatUser);
-
-        //    _logger.LogInformation($"{0} left the room!", chatUser.UserName);
-
-        //    var messageData = new Message
-        //    {
-        //        Text = $"{chatUser.UserName} left the room!",
-        //        Sender = 0,
-        //        MessageType = MessageTypeEnum.Notification
-        //    };
-
-        //    await Clients.All.SendAsync("ReceiveMessage", messageData);
-        //    await base.OnDisconnectedAsync(exception);
-        //}
-
-        private async Task UpdateOnlineUsers(ChatUserModel chatUser, bool remove = false)
+        public override async Task OnConnectedAsync()
         {
-            if (remove)
-            {
-                await _connectedUsersRepository.RemoveUserAsync(chatUser.ConnectionId);
-            }
-            else
-            {
-                await _connectedUsersRepository.AddUserAsync(chatUser);
-            }
-            var allUsers = await _connectedUsersRepository.GetAllUsersAsync().ConfigureAwait(false);
+            var userId = Context.User?.Claims.FirstOrDefault(x => x.Type == "Id")?.Value;
+            var connectionId = Context.ConnectionId;
 
-            await Clients.All.SendAsync("UpdateOnlineUsers", allUsers);
+            if(string.IsNullOrWhiteSpace(userId) )
+            {
+                return;
+            }
+
+            _logger.LogInformation($"User {0} entered the room!", userId);
+
+            var addedNewUser = _onlineUsersHolder.Add(connectionId, userId);
+            if (addedNewUser)
+            {
+                await Clients.All.SendAsync(UpdateOnlineUsersEvent, _onlineUsersHolder.GetAll());
+            }
+
+            await base.OnConnectedAsync();
         }
 
-        private ChatUserModel GetUserDataFromHeaders()
+        public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            var httpContext = Context.GetHttpContext();
-            var userName = httpContext?.Request?.Headers["X-USER-NAME"].ToString() ?? "Unknown";
-            var userAvatar = httpContext?.Request?.Headers["X-AVATAR"].ToString() ?? "379476_furby.svg";
+            var connectionId = Context.ConnectionId;
 
-            return new ChatUserModel
+            var removedUser = _onlineUsersHolder.Remove(connectionId);
+
+            if (!string.IsNullOrEmpty(removedUser))
             {
-                UserName = userName,
-                Avatar = userAvatar,
-                ConnectionId = Context.ConnectionId
-            };
+                _logger.LogInformation($"{0} left the room!", removedUser);
+                await Clients.All.SendAsync(UpdateOnlineUsersEvent, _onlineUsersHolder.GetAll());
+            }
+
+            if (exception is not null)
+            {
+                _logger.LogError(exception.Message, exception);
+            }
+
+            await base.OnDisconnectedAsync(exception);
         }
     }
 }

@@ -1,3 +1,4 @@
+using ChatServer.Auth;
 using ChatServer.Data;
 using ChatServer.Hubs;
 using ChatServer.Models;
@@ -9,6 +10,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddAuthentication("Id")
+    .AddScheme<IdAuthSchemeOptions, IdAuthSchemeHandler>(
+        "Id",
+        opts => { }
+    );
+
+builder.Services.AddSingleton<OnlineUsersHolder>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -33,15 +42,10 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddSingleton<IConnectedAppsRepository, ConnectedAppsRepository>();
-builder.Services.AddSingleton<IConnectedUsersRepository, ConnectedUsersRepository>();
 
 //builder.Services.AddHostedService<UpdateChacker>();
 
 var app = builder.Build();
-
-//app.MapHub<ApplicationHub>("/appHub");
-app.MapHub<ChatHub>("/chatHub"); 
-
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -50,6 +54,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+app.UseHttpLogging();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+//app.MapHub<ApplicationHub>("/appHub");
+app.MapHub<ChatHub>("/chatHub"); 
+
+# region Endpopints
 app.MapGet("/get-direct-messages/{user1:long}/{user2:long}/{number:int}", 
     async ([FromServices] IMessageService messageService, [FromRoute] long user1, [FromRoute] long user2, [FromRoute] int number) =>
 {
@@ -95,14 +109,17 @@ app.MapGet("/getusers", async ([FromServices] IUserService userService) =>
 })
 .WithName("GetUsers");
 
-app.MapGet("/users-with-last-message/{userForId:long}", async ([FromRoute] long userForId, [FromServices] IUserService userService) =>
+app.MapGet("/users-with-last-message/{userForId:long}", async ([FromRoute] long userForId, [FromServices] IUserService userService, HttpContext context) =>
 {
+    
     var usersWithLastMessage =  await userService.GetUserswithLastMessageAsync(userForId);
     return new GetUsersResponse
     {
         UsersWithLastMessage = usersWithLastMessage
     };
 })
+.RequireAuthorization()
 .WithName("GetUsersWithLastMessage");
+# endregion
 
 app.Run();
