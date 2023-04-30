@@ -1,15 +1,17 @@
+import 'package:family_chat/src/pages/home/settings/models/settings_constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 class GlobalService {
-  static final GlobalService _singleton = GlobalService._internal();
+  Future<Uri> getServerUri([String? path]) async {
+    final prefs = await SharedPreferences.getInstance();
 
-  factory GlobalService() {
-    return _singleton;
+    var protocol = prefs.getString(SettingsConstants.protocol);
+    var host = prefs.getString(SettingsConstants.host);
+    var port = prefs.getInt(SettingsConstants.port);
+
+    if (path == null) {
+      return Uri(scheme: protocol, host: host, port: port);
+    }
+    return Uri(scheme: protocol, host: host, port: port, path: path);
   }
-
-  GlobalService._internal();
-
-  int userId = 0;
-
-  // int? _userId;
-  // int get userId => _userId ?? 0;
-  // set userId(int value) => userId = value;
 }

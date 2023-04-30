@@ -169,14 +169,13 @@ class _ChatViewState extends State<ChatView> {
               visible: viewModel.showErrorMessage,
               child: Container(
                 padding: const EdgeInsets.all(10.00),
-                //margin: const EdgeInsets.only(bottom: 10.00),
                 color: Colors.red,
                 child: Row(
                   children: [
                     Container(
                       margin: const EdgeInsets.only(right: 6.00),
                       child: const Icon(Icons.info, color: Colors.white),
-                    ), // icon for error message
+                    ),
                     Text(viewModel.errorMessage, style: const TextStyle(color: Colors.white)),
                     Expanded(
                       child: Align(

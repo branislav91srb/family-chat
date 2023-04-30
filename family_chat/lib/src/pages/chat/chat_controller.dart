@@ -4,7 +4,7 @@ import 'dart:convert';
 
 import 'package:dart_json_mapper/dart_json_mapper.dart';
 import 'package:family_chat/src/pages/home/account/models/user_model.dart';
-import 'package:family_chat/src/pages/chat/services/signalr_service.dart';
+import 'package:family_chat/src/pages/home/messages/services/signalr_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
