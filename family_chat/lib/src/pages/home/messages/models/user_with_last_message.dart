@@ -17,7 +17,7 @@ class UserWithLastMessage {
   factory UserWithLastMessage.fromJson(Map<String, dynamic> json) {
     return UserWithLastMessage(
       user: BaseUserModel.fromJson(json['user']),
-      message: BaseMessageModel?.fromJson(json['message']),
+      message: json['message'] != null ? BaseMessageModel?.fromJson(json['message']) : null,
     );
   }
 }
