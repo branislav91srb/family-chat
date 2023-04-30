@@ -118,7 +118,6 @@ app.MapGet("/users-with-last-message/{userForId:long}", async ([FromRoute] long 
         UsersWithLastMessage = usersWithLastMessage
     };
 })
-.RequireAuthorization()
 .WithName("GetUsersWithLastMessage");
 # endregion
 

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -15,11 +14,10 @@ class MessagesController with ChangeNotifier {
     var url = await globalService.getServerUri('/users-with-last-message/$userId');
     http.Response response;
     try {
-      await client.head(url);
-
-      response = await client.get(url, headers: {
-        HttpHeaders.authorizationHeader: 'Bearer 2',
-      });
+      response = await client.get(url);
+      // response = await client.get(url, headers: {
+      //   HttpHeaders.authorizationHeader: 'Bearer 2',
+      // });
 
       if (response.statusCode != 200) {
         throw Exception('Failed to get users');
