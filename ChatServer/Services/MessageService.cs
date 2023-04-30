@@ -1,5 +1,7 @@
-﻿using ChatServer.Services.Abstraction;
+﻿using ChatServer.Data.Entities;
+using ChatServer.Services.Abstraction;
 using Contracts;
+using Contracts.Models;
 using Contracts.Responses;
 
 namespace ChatServer.Services
@@ -32,6 +34,20 @@ namespace ChatServer.Services
             }
 
             return messagesResponse;
+        }
+
+        public async Task<List<MessageModel>> GetLastMessagesForUserAsync(long userId)
+        {
+            var messages = await _repository.GetLastMessagesForUserAsync(userId);
+
+            return messages.Select(x => new MessageModel
+            {
+                From = x.From,
+                To = x.To,
+                Id = x.Id,
+                SendTime = x.SendTime,
+                Text = x.Text
+            }).ToList();
         }
     }
 }

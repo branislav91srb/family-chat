@@ -1,5 +1,6 @@
 ﻿using ChatServer.Data.Entities;
 using ChatServer.Services.Abstraction;
+using Contracts.Models;
 using Contracts.Requests;
 
 namespace ChatServer.Services
@@ -7,15 +8,53 @@ namespace ChatServer.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IMessageService _messageService;
 
-        public UserService(IUserRepository userRepository)
+        public UserService(IUserRepository userRepository, IMessageService messageRepository)
         {
             _userRepository = userRepository;
+            _messageService = messageRepository;
         }
 
-        public async Task<List<UserEntity>> GetUsersAsync()
+        public async Task<List<UserModel>> GetUsersAsync()
         {
-            return await _userRepository.GetUsersAsync();
+            var users = await _userRepository.GetUsersAsync();
+
+            var result = new List<UserModel>();
+
+            foreach (var user in users)
+            {
+                result.Add(new UserModel
+                {
+                    Id = user.Id,
+                    Avatar = user.Avatar,
+                    UserName = user.UserName
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<List<UserWithLastMessage>> GetUserswithLastMessageAsync(long userForId)
+        {
+            var users = await GetUsersAsync();
+            var lastMessages = await _messageService.GetLastMessagesForUserAsync(userForId);
+
+            var result = new List<UserWithLastMessage>();
+
+            foreach (var user in users)
+            {
+                var lastMessage = lastMessages.FirstOrDefault(x => x.From == user.Id || x.To == user.Id);
+                var userWithMessage = new UserWithLastMessage
+                {
+                    User = user,
+                    Message = lastMessage
+                };
+
+                result.Add(userWithMessage);
+            }
+
+            return result;
         }
 
         public async Task<UserEntity> GetUserByIdAsync(long userId)

@@ -4,9 +4,9 @@ using ChatServer.Models;
 using ChatServer.Services;
 using ChatServer.Services.Abstraction;
 using Contracts.Requests;
+using Contracts.Responses;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,7 +74,6 @@ app.MapPost("/login", async ([FromServices] IUserService userService, [FromBody]
     }
 
     return Results.Ok(user);
-
 })
 .WithName("Login");
 
@@ -95,5 +94,15 @@ app.MapGet("/getusers", async ([FromServices] IUserService userService) =>
     return await userService.GetUsersAsync();
 })
 .WithName("GetUsers");
+
+app.MapGet("/users-with-last-message/{userForId:long}", async ([FromRoute] long userForId, [FromServices] IUserService userService) =>
+{
+    var usersWithLastMessage =  await userService.GetUserswithLastMessageAsync(userForId);
+    return new GetUsersResponse
+    {
+        UsersWithLastMessage = usersWithLastMessage
+    };
+})
+.WithName("GetUsersWithLastMessage");
 
 app.Run();
