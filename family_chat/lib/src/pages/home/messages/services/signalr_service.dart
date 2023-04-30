@@ -1,42 +1,42 @@
+import 'package:family_chat/src/global_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:signalr_core/signalr_core.dart';
-import '../../settings/models/settings_constants.dart';
 
 typedef MyFunction<T> = void Function(List<Object?>?);
 
 class SignalrService {
+  final GlobalService globalService = GlobalService();
   static const String messageReceiveEventName = 'ReceiveMessage';
   HubConnection? connection;
 
-  final MyFunction<List<Object?>> onMessageReceived;
+  final Map<String, MyFunction<List<Object?>>> events;
 
-  SignalrService({required this.onMessageReceived}) {
-    getUri('/chatHub').then((value) async {
+  SignalrService({required this.events}) {
+    globalService.getServerUri('/chatHub').then((value) async {
       connection = HubConnectionBuilder()
           .withUrl(
               value.toString(),
               HttpConnectionOptions(
                 logging: (level, message) => print(message),
+                accessTokenFactory: () async => await createAuthToken(),
               ))
           .build();
 
       await connection!.start();
 
-      connection!.on(messageReceiveEventName, (message) {
-        print(message.toString());
-        onMessageReceived(message);
+      events.forEach((eventName, eventFunction) {
+        connection!.on(eventName, (message) {
+          print(eventFunction.toString());
+          eventFunction(message);
+        });
       });
     });
   }
 
-  Future<Uri> getUri(String path) async {
+  Future<String> createAuthToken() async {
     final prefs = await SharedPreferences.getInstance();
-
-    var protocol = prefs.getString(SettingsConstants.protocol);
-    var host = prefs.getString(SettingsConstants.host);
-    var port = prefs.getInt(SettingsConstants.port);
-
-    return Uri(scheme: protocol, host: host, port: port, path: path);
+    var userId = prefs.getInt('userId')!;
+    return "Bearer $userId";
   }
 }

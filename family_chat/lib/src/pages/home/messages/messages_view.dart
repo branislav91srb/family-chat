@@ -23,16 +23,15 @@ class MessagesView extends StatefulWidget implements CustomPage {
   String get pageName => "Messages";
 }
 
-/// Displays a list of SampleItems.
 class _MessagesViewState extends State<MessagesView> {
-  late SignalrService signalrService;
+  SignalrService? signalrService;
   final player = AudioPlayer();
   var messagesController = MessagesController();
 
   bool loadInterface = false;
   late SharedPreferences prefs;
   late int _userId = 0;
-  List<UserWithLastMessage> items = [];
+  List<UserWithLastMessage> allUsers = [];
   String _errorMessage = "";
   final Map<int, int> _unreadMessages = {};
 
@@ -72,10 +71,13 @@ class _MessagesViewState extends State<MessagesView> {
     });
 
     setState(() {
-      items = users;
+      allUsers = users;
     });
 
-    SignalrService(onMessageReceived: onMessageReceived);
+    SignalrService(events: {
+      "ReceiveMessage": onMessageReceived,
+      "UpdateOnlineUsers": onOnlineUsersUpdate,
+    });
   }
 
   @override
@@ -86,9 +88,9 @@ class _MessagesViewState extends State<MessagesView> {
       children: [
         Expanded(
           child: ListView.builder(
-            itemCount: items.length,
+            itemCount: allUsers.length,
             itemBuilder: (BuildContext context, int index) {
-              final item = items[index];
+              final item = allUsers[index];
 
               bool isMe = item.user.id == _userId;
 
@@ -99,9 +101,24 @@ class _MessagesViewState extends State<MessagesView> {
                   ),
                   leading: Opacity(
                     opacity: isMe ? 0.5 : 1.0,
-                    child: CircleAvatar(
-                      // Display the Flutter Logo image asset.
-                      foregroundImage: NetworkImage(item.user.avatar),
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          // Display the Flutter Logo image asset.
+                          foregroundImage: NetworkImage(item.user.avatar),
+                        ),
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: badges.Badge(
+                            showBadge: item.user.isOnline,
+                            badgeAnimation: const BadgeAnimation.scale(
+                              animationDuration: Duration(milliseconds: 500),
+                              curve: Curves.fastOutSlowIn,
+                            ),
+                          ),
+                        )
+                      ],
                     ),
                   ),
                   subtitle: Opacity(
@@ -158,12 +175,37 @@ class _MessagesViewState extends State<MessagesView> {
     setState(() {
       _unreadMessages[senderId] = (_unreadMessages[senderId] ?? 0) + 1;
 
-      for (var item in items) {
+      for (var item in allUsers) {
         if (item.user.id == senderId) {
           item.message?.text = value["text"];
           break;
         }
       }
     });
+  }
+
+  void onOnlineUsersUpdate(List<Object?>? params) {
+    if (params == null) return;
+
+    var data = params[0] as List<dynamic>;
+
+    var onlineUsers = List<int>.empty(growable: true);
+
+    for (var item in data) {
+      onlineUsers.add(int.parse(item![0]));
+    }
+
+    setState(() {
+      for (var item in allUsers) {
+        item.user.isOnline = onlineUsers.contains(item.user.id);
+      }
+    });
+  }
+
+  @override
+  void dispose() async {
+    super.dispose();
+    player.dispose();
+    await signalrService?.connection?.stop();
   }
 }

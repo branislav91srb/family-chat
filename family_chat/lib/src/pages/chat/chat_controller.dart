@@ -23,7 +23,7 @@ class ChatController with ChangeNotifier {
 
   ChatViewModel viewModel;
   ChatController({required this.viewModel, required this.onMessageReceived}) {
-    signalrService = SignalrService(onMessageReceived: onMessageReceived);
+    signalrService = SignalrService(events: {"ReceiveMessage": onMessageReceived});
   }
 
   Future<UserModel> getUser(int id) async {
