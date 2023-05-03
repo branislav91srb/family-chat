@@ -43,6 +43,8 @@ class _MessagesViewState extends State<MessagesView> {
   void initState() {
     super.initState();
 
+    player.setSourceAsset('sounds/notification.wav');
+
     _init().then((value) {
       setState(() {
         loadInterface = true;
@@ -90,7 +92,8 @@ class _MessagesViewState extends State<MessagesView> {
   Widget build(BuildContext context) {
     if (!loadInterface) return const Center(child: CircularProgressIndicator());
 
-    return Stack(
+    return Flex(
+      direction: Axis.vertical,
       children: [
         Expanded(
           child: ListView.builder(
@@ -157,38 +160,42 @@ class _MessagesViewState extends State<MessagesView> {
               ? ErrorMessage(message: _errorMessage, closeError: () => setState(() => _errorMessage = ""))
               : null,
         ),
-        Positioned(
-          bottom: 10,
-          right: 10,
-          child: CircleAvatar(
-            backgroundColor: Colors.blueAccent,
-            backgroundImage: NetworkImage(_avatar),
-            radius: 30,
-            child: Stack(
-              children: [
-                Text(
-                  _userName,
-                  style: TextStyle(
-                    fontSize: 11,
-                    foreground: Paint()
-                      ..style = PaintingStyle.stroke
-                      ..strokeWidth = 1
-                      ..color = Colors.black,
+        _avatar.isNotEmpty
+            ? Align(
+                alignment: Alignment.bottomRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(15),
+                  child: CircleAvatar(
+                    backgroundColor: Colors.blueAccent,
+                    backgroundImage: NetworkImage(_avatar),
+                    radius: 30,
+                    child: Stack(
+                      children: [
+                        Text(
+                          _userName,
+                          style: TextStyle(
+                            fontSize: 11,
+                            foreground: Paint()
+                              ..style = PaintingStyle.stroke
+                              ..strokeWidth = 1
+                              ..color = Colors.black,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        Text(
+                          _userName,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.white70,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
-                  textAlign: TextAlign.center,
                 ),
-                Text(
-                  _userName,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.white70,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        )
+              )
+            : Container(),
       ],
     );
   }

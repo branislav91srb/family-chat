@@ -1,5 +1,5 @@
 # Publish Windows
-####
+flutter build windows --release
 
 # Publish Android
 flutter build apk --release
