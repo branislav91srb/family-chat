@@ -4,7 +4,6 @@ using Contracts;
 using Contracts.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using System.Collections.Concurrent;
 
 namespace ChatServer.Hubs
 {
@@ -36,7 +35,18 @@ namespace ChatServer.Hubs
                 MessageType = MessageTypeEnum.Message
             };
 
-            await Clients.All.SendAsync(MessageReceiveEvent, messageData);
+            var senderConnectionId = _onlineUsersHolder.GetConnectionIdByUserId(fromTo.From.ToString());
+
+            if(!string.IsNullOrEmpty(senderConnectionId))
+            {
+                await Clients.AllExcept(senderConnectionId).SendAsync(MessageReceiveEvent, messageData);
+            }
+            else
+            {
+                await Clients.All.SendAsync(MessageReceiveEvent, messageData);
+            }
+
+            
 
             await _messageRepository.SaveMessageAsync(new MessageEntity
             {
