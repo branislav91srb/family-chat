@@ -23,10 +23,14 @@ class MessagesController with ChangeNotifier {
         throw Exception('Failed to get users');
       }
 
-      var result = json.decode(response.body)['usersWithLastMessage'].map<UserWithLastMessage>((data) {
-        var item = UserWithLastMessage.fromJson(data);
-        return item;
-      }).toList();
+      var result = json
+          .decode(response.body)['usersWithLastMessage']
+          .map<UserWithLastMessage>((data) {
+            var item = UserWithLastMessage.fromJson(data);
+            return item;
+          })
+          .where((e) => e.user.id != userId)
+          .toList();
 
       return result;
     } catch (e) {

@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:badges/badges.dart';
 import 'package:family_chat/src/custom_page.dart';
 import 'package:family_chat/src/custom_widgets/error_message.dart';
+import 'package:family_chat/src/pages/home/account/account_controller.dart';
 import 'package:family_chat/src/pages/home/messages/services/signalr_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,6 +28,7 @@ class _MessagesViewState extends State<MessagesView> {
   SignalrService? signalrService;
   final player = AudioPlayer();
   var messagesController = MessagesController();
+  var accountController = AccountController();
 
   bool loadInterface = false;
   late SharedPreferences prefs;
@@ -34,6 +36,8 @@ class _MessagesViewState extends State<MessagesView> {
   List<UserWithLastMessage> allUsers = [];
   String _errorMessage = "";
   final Map<int, int> _unreadMessages = {};
+  String _avatar = "";
+  String _userName = "";
 
   @override
   void initState() {
@@ -64,6 +68,8 @@ class _MessagesViewState extends State<MessagesView> {
       });
     });
 
+    await _setUserData();
+
     setState(() {
       for (var user in users) {
         _unreadMessages[user.user.id] = 0;
@@ -84,7 +90,7 @@ class _MessagesViewState extends State<MessagesView> {
   Widget build(BuildContext context) {
     if (!loadInterface) return const Center(child: CircularProgressIndicator());
 
-    return Column(
+    return Stack(
       children: [
         Expanded(
           child: ListView.builder(
@@ -92,54 +98,46 @@ class _MessagesViewState extends State<MessagesView> {
             itemBuilder: (BuildContext context, int index) {
               final item = allUsers[index];
 
-              bool isMe = item.user.id == _userId;
-
               return ListTile(
-                  title: Opacity(
-                    opacity: isMe ? 0.5 : 1.0,
-                    child: Text(item.user.userName),
-                  ),
-                  leading: Opacity(
-                    opacity: isMe ? 0.5 : 1.0,
-                    child: Stack(
-                      children: [
-                        CircleAvatar(
-                          // Display the Flutter Logo image asset.
-                          foregroundImage: NetworkImage(item.user.avatar),
-                        ),
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: badges.Badge(
-                            showBadge: item.user.isOnline,
-                            badgeAnimation: const BadgeAnimation.scale(
-                              animationDuration: Duration(milliseconds: 500),
-                              curve: Curves.fastOutSlowIn,
-                            ),
+                  title: Text(item.user.userName),
+                  leading: Stack(
+                    children: [
+                      CircleAvatar(
+                        foregroundImage: NetworkImage(item.user.avatar),
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: badges.Badge(
+                          showBadge: item.user.isOnline,
+                          badgeAnimation: const BadgeAnimation.scale(
+                            animationDuration: Duration(milliseconds: 500),
+                            curve: Curves.fastOutSlowIn,
                           ),
-                        )
-                      ],
-                    ),
+                          badgeStyle: const badges.BadgeStyle(
+                            badgeColor: Colors.green,
+                          ),
+                        ),
+                      )
+                    ],
                   ),
-                  subtitle: Opacity(
-                    opacity: isMe ? 0.5 : 1.0,
-                    child: Text(
-                      item.message?.text ?? "",
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
+                  subtitle: Text(
+                    item.message?.text ?? "",
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                   trailing: badges.Badge(
                     showBadge: _unreadMessages[item.user.id]! > 0,
                     badgeContent: Text(_unreadMessages[item.user.id].toString()),
+                    badgeStyle: const badges.BadgeStyle(
+                      badgeColor: Colors.blue,
+                    ),
                     badgeAnimation: const BadgeAnimation.scale(
                       animationDuration: Duration(milliseconds: 500),
                       curve: Curves.fastOutSlowIn,
                     ),
                   ),
                   onTap: () {
-                    if (isMe) return;
-
                     setState(() {
                       _unreadMessages[item.user.id] = 0;
                     });
@@ -158,9 +156,51 @@ class _MessagesViewState extends State<MessagesView> {
           child: _errorMessage.isNotEmpty
               ? ErrorMessage(message: _errorMessage, closeError: () => setState(() => _errorMessage = ""))
               : null,
+        ),
+        Positioned(
+          bottom: 10,
+          right: 10,
+          child: CircleAvatar(
+            backgroundColor: Colors.blueAccent,
+            backgroundImage: NetworkImage(_avatar),
+            radius: 30,
+            child: Stack(
+              children: [
+                Text(
+                  _userName,
+                  style: TextStyle(
+                    fontSize: 11,
+                    foreground: Paint()
+                      ..style = PaintingStyle.stroke
+                      ..strokeWidth = 1
+                      ..color = Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                Text(
+                  _userName,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.white70,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
         )
       ],
     );
+  }
+
+  _setUserData() async {
+    if (_userId == 0) return;
+    var userData = await accountController.getUser(_userId);
+
+    setState(() {
+      _userName = userData.userName;
+      _avatar = userData.avatar;
+    });
   }
 
   void onMessageReceived(List<Object?>? params) async {

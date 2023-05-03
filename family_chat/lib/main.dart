@@ -1,6 +1,10 @@
+import 'dart:io';
+
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:family_chat/src/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:system_tray/system_tray.dart';
 import 'main.mapper.g.dart' show initializeJsonMapper;
 import 'src/app.dart';
 import 'src/pages/theme_settings/theme_settings_controller.dart';
@@ -26,6 +30,8 @@ void main() async {
   // This prevents a sudden theme change when the app is first displayed.
   await settingsController.loadSettings();
 
+  await initSystemTray();
+
   // Run the app and pass in the SettingsController. The app listens to the
   // SettingsController for changes, then passes it further down to the
   // SettingsView.
@@ -33,4 +39,52 @@ void main() async {
     settingsController: settingsController,
     initialRoute: initialRoute,
   ));
+
+  if (Platform.isWindows) {
+    doWhenWindowReady(() {
+      final win = appWindow;
+      const initialSize = Size(800, 600);
+      win.minSize = initialSize;
+      win.size = initialSize;
+      win.alignment = Alignment.center;
+      win.title = "Family Chat";
+      win.hide();
+    });
+  }
+}
+
+Future<void> initSystemTray() async {
+  if (!Platform.isWindows) return;
+
+  String path = 'assets/images/flutter_logo.ico';
+
+  final AppWindow appWindow = AppWindow();
+  final SystemTray systemTray = SystemTray();
+
+  // We first init the systray menu
+  await systemTray.initSystemTray(
+    title: "system tray",
+    iconPath: path,
+  );
+
+  // create context menu
+  final Menu menu = Menu();
+  await menu.buildFrom([
+    MenuItemLabel(label: 'Show', onClicked: (menuItem) => appWindow.show()),
+    MenuItemLabel(label: 'Hide', onClicked: (menuItem) => appWindow.hide()),
+    MenuItemLabel(label: 'Exit', onClicked: (menuItem) => appWindow.close()),
+  ]);
+
+  // set context menu
+  await systemTray.setContextMenu(menu);
+
+  // handle system tray event
+  systemTray.registerSystemTrayEventHandler((eventName) {
+    debugPrint("eventName: $eventName");
+    if (eventName == kSystemTrayEventClick) {
+      Platform.isWindows ? appWindow.show() : systemTray.popUpContextMenu();
+    } else if (eventName == kSystemTrayEventRightClick) {
+      Platform.isWindows ? systemTray.popUpContextMenu() : appWindow.show();
+    }
+  });
 }

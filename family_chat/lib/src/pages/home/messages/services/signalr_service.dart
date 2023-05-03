@@ -1,4 +1,5 @@
 import 'package:family_chat/src/global_service.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:signalr_core/signalr_core.dart';
@@ -18,7 +19,7 @@ class SignalrService {
           .withUrl(
               value.toString(),
               HttpConnectionOptions(
-                logging: (level, message) => print(message),
+                logging: (level, message) => debugPrint(message),
                 accessTokenFactory: () async => await createAuthToken(),
               ))
           .build();
@@ -27,7 +28,7 @@ class SignalrService {
 
       events.forEach((eventName, eventFunction) {
         connection!.on(eventName, (message) {
-          print(eventFunction.toString());
+          debugPrint(eventFunction.toString());
           eventFunction(message);
         });
       });
