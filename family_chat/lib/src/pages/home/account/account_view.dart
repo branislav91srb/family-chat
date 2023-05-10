@@ -26,6 +26,7 @@ class _AccountViewState extends State<AccountView> {
   String _avatar = 'https://www.w3schools.com/howto/img_avatar.png';
 
   bool _loginForm = false;
+  bool _showPassword = false;
 
   var accountController = AccountController();
   var nameController = TextEditingController();
@@ -132,8 +133,18 @@ class _AccountViewState extends State<AccountView> {
               ),
               Expanded(
                 child: TextField(
-                  controller: passwordController,
-                ),
+                    obscureText: !_showPassword,
+                    controller: passwordController,
+                    decoration: InputDecoration(
+                      suffixIcon: IconButton(
+                        icon: Icon(_showPassword ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () {
+                          setState(() {
+                            _showPassword = !_showPassword;
+                          });
+                        },
+                      ),
+                    )),
               ),
             ],
           ),

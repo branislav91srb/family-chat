@@ -47,11 +47,8 @@ class _HomeViewState extends State<HomeView> {
         title: Text(pages[_currentPageIndex]!.pageName),
         actions: [
           IconButton(
-            icon: const Icon(Icons.opacity),
+            icon: const Icon(Icons.brightness_4_rounded),
             onPressed: () {
-              // Navigate to the settings page. If the user leaves and returns
-              // to the app after it has been killed while running in the
-              // background, the navigation stack is restored.
               Navigator.pushNamed(context, ThemeSettingsView.routeName);
             },
           ),
@@ -71,16 +68,6 @@ class _HomeViewState extends State<HomeView> {
           });
         },
       ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () => {
-      //     Navigator.restorablePushNamed(
-      //       context,
-      //       ChatView.routeName,
-      //     )
-      //   },
-      //   tooltip: 'Open chat',
-      //   child: const Icon(Icons.chat),
-      // ),
     );
   }
 }

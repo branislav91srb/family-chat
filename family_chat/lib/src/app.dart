@@ -53,11 +53,22 @@ class MyApp extends StatelessWidget {
           // directory.
           onGenerateTitle: (BuildContext context) => AppLocalizations.of(context)!.appTitle,
 
-          // Define a light and dark color theme. Then, read the user's
-          // preferred ThemeMode (light, dark, or system default) from the
-          // SettingsController to display the correct theme.
-          theme: ThemeData(),
-          darkTheme: ThemeData.dark(),
+          theme: ThemeData(
+            //useMaterial3: true,
+            textSelectionTheme: const TextSelectionThemeData(
+              selectionColor: Colors.green,
+              selectionHandleColor: Colors.white70,
+            ),
+          ),
+          //darkTheme: ThemeData.dark(),
+          darkTheme: ThemeData(
+            //useMaterial3: true,
+            brightness: Brightness.dark,
+            textSelectionTheme: const TextSelectionThemeData(
+              selectionColor: Colors.green,
+              selectionHandleColor: Colors.white70,
+            ),
+          ),
           themeMode: settingsController.themeMode,
 
           // Define a function to handle named routes in order to support

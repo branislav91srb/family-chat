@@ -226,7 +226,7 @@ class _ChatViewState extends State<ChatView> {
                   Container(
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(top: 8),
-                    child: Text(
+                    child: SelectableText(
                       currentMessage.messageText,
                       textAlign: TextAlign.end,
                     ),
@@ -290,7 +290,7 @@ class _ChatViewState extends State<ChatView> {
                   Container(
                     alignment: Alignment.centerLeft,
                     padding: const EdgeInsets.only(top: 8),
-                    child: Text(
+                    child: SelectableText(
                       currentMessage.messageText,
                       textAlign: TextAlign.end,
                     ),
